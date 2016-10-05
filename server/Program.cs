@@ -16,7 +16,7 @@ namespace server
             if (args.GetLength(0) > 0)
             {
                 path = args[1];
-                port = Convert.ToInt16(args[4]);
+                port = Convert.ToInt16(args[3]);
             }
             else
             {
@@ -27,6 +27,7 @@ namespace server
 
             Console.WriteLine("PATH: " + path);
             Console.WriteLine("POTR: " + port);
+            Console.ReadLine();
         }
     }
 }
