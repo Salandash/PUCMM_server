@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,24 +20,70 @@ namespace server
                 {
                     path = args[1];
                     port = 80;
+
+                    if (!Directory.Exists(path))
+                    {
+                        Console.WriteLine("PATH inexistente: " + path);
+                        return 1;
+                    }
+
                 }
 
                 else if (args[0] == "--port")
                 {
+                    int i;
+                    bool b = Int32.TryParse(args[1], out i);
+
+                    if(!b)
+                    {
+                        Console.WriteLine("Puerto no es un número");
+                        return 1;
+                    }
+
                     port = Convert.ToInt16(args[1]);
                     path = System.Reflection.Assembly.GetEntryAssembly().Location;
                 }
 
                 else if (args[0] == "--path" && args[2] == "--port")
                 {
+                    int i;
+                    bool b = Int32.TryParse(args[2], out i);
+
+                    if (!b)
+                    {
+                        Console.WriteLine("Puerto no es un número");
+                        return 1;
+                    }
+
                     path = args[1];
                     port = Convert.ToInt16(args[3]);
+
+                    if (!Directory.Exists(path))
+                    {
+                        Console.WriteLine("PATH inexistente: " + path);
+                        return 1;
+                    }
                 }
 
                 else if (args[2] == "--path" && args[0] == "--port")
                 {
+                    int i;
+                    bool b = Int32.TryParse(args[1], out i);
+
+                    if (!b)
+                    {
+                        Console.WriteLine("Puerto no es un número");
+                        return 1;
+                    }
+
                     path = args[3];
                     port = Convert.ToInt16(args[1]);
+
+                    if (!Directory.Exists(path))
+                    {
+                        Console.WriteLine("PATH inexistente: " + path);
+                        return 1;
+                    }
                 }
                 else
                 {
