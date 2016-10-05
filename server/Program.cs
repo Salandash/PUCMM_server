@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.NetworkInformation;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,33 @@ namespace server
 {
     class Program
     {
+        public void _checkport(int port)
+        {
+            bool isAvailable = true;
+
+            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            TcpConnectionInformation[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpConnections();
+
+            foreach (TcpConnectionInformation tcpi in tcpConnInfoArray)
+            {
+                if (tcpi.LocalEndPoint.Port == port)
+                {
+                    isAvailable = false;
+                    break;
+                }
+            }
+
+            if (isAvailable)
+            {
+                Console.WriteLine("PORT UNUSED");
+            }
+            else
+            {
+                Console.WriteLine("PORT USED");
+            }
+
+        }
+
         static int Main(string[] args)
         {
             string path;
@@ -42,6 +70,7 @@ namespace server
 
                     port = Convert.ToInt16(args[1]);
                     path = System.Reflection.Assembly.GetEntryAssembly().Location;
+
                 }
 
                 else if (args[0] == "--path" && args[2] == "--port")
@@ -51,7 +80,7 @@ namespace server
 
                     if (!b)
                     {
-                        Console.WriteLine("Puerto no es un número");
+                        Console.WriteLine("PORT is not a number");
                         return 1;
                     }
 
@@ -60,9 +89,10 @@ namespace server
 
                     if (!Directory.Exists(path))
                     {
-                        Console.WriteLine("PATH inexistente: " + path);
+                        Console.WriteLine("PATH does not exist: " + path);
                         return 1;
                     }
+                    
                 }
 
                 else if (args[2] == "--path" && args[0] == "--port")
@@ -72,7 +102,7 @@ namespace server
 
                     if (!b)
                     {
-                        Console.WriteLine("Puerto no es un número");
+                        Console.WriteLine("PORT is not a number");
                         return 1;
                     }
 
@@ -81,9 +111,10 @@ namespace server
 
                     if (!Directory.Exists(path))
                     {
-                        Console.WriteLine("PATH inexistente: " + path);
+                        Console.WriteLine("PATH does not exist: " + path);
                         return 1;
                     }
+
                 }
                 else
                 {
@@ -98,6 +129,8 @@ namespace server
             }
             Console.WriteLine("PATH: " + path);
             Console.WriteLine("PORT: " + port);
+            Program o = new Program();
+            o._checkport(port);
             return 0;
         }
     }
