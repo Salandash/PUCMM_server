@@ -131,6 +131,12 @@ namespace server
             Console.WriteLine("PORT: " + port);
             Program o = new Program();
             o._checkport(port);
+
+            while(true)
+            {
+
+            }
+
             return 0;
         }
     }
