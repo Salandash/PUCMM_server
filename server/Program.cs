@@ -37,10 +37,19 @@ namespace server
 
         }
 
+        //Método que imprime el tiempo entre dos fechas.
+        public void _runTime(DateTime dt, DateTime dt2)
+        {
+            TimeSpan diff = dt2.Subtract(dt);
+            Console.WriteLine("RUNTIME: " + diff);
+        }
+
         static int Main(string[] args)
         {
             string path;
             int port;
+            DateTime timeA = DateTime.Now;
+            DateTime timeB;
 
             if (args.GetLength(0) > 0)
             {
@@ -134,6 +143,12 @@ namespace server
 
             while(true)
             {
+                if (Console.ReadLine() == "uptime" || Console.ReadLine()=="UPTIME")
+                {
+                    timeB = DateTime.Now;
+                    o._runTime(timeA, timeB);
+                    
+                }
 
             }
 
