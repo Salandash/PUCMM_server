@@ -149,6 +149,11 @@ namespace server
                     o._runTime(timeA, timeB);
                     
                 }
+                if (Console.ReadLine() == "kill" || Console.ReadLine() == "KILL")
+                {
+                    return 0;
+                }
+
 
             }
 
