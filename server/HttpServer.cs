@@ -10,6 +10,16 @@ namespace server
 {
     class HttpServer
     {
+        private HttpServerState state;
+        public TcpListener tcpListener;
+        public IPEndPoint ipPoint;
+
+        public HttpServer(int port)
+        {
+            ipPoint = new IPEndPoint(IPAddress.Loopback, port);
+        }
+
+        #region Methods
         public void _Start()
         {
             tcpListener = new TcpListener(ipPoint);
@@ -19,15 +29,11 @@ namespace server
         {
             tcpListener.Stop();
         }
+        #endregion
 
-        private HttpServerState serverState;
-        public TcpListener tcpListener;
-        public IPEndPoint ipPoint;
-
-        public HttpServer(int port)
-        {
-            ipPoint = new IPEndPoint(IPAddress.Loopback, port);
-        }
+        #region Properties
+        public HttpServerState serverState { get { return state; } set { state = value; } }
+        #endregion
 
     }
 }
