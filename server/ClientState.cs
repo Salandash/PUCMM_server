@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace server
 {
-    class ClientState
+
+    public enum ClientState
     {
-        enum clientState
-        {
             ReadingProlog,
             ReadingHeaders,
             ReadingContent,
@@ -17,6 +16,5 @@ namespace server
             WritingHeaders,
             WritingContent,
             Closed
-        }
     }
 }

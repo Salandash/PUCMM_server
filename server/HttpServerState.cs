@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 
 namespace server
 {
-    class HttpServerState
+
+    public enum HttpServerState
     {
-        enum State
-        {
-            Starting,
-            Started,
-            Stopping,
-            Stopped
-        }
+        Starting,
+        Started,
+        Stopping,
+        Stopped
     }
+
 }
