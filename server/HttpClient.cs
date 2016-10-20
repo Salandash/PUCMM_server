@@ -11,8 +11,8 @@ namespace server
     class HttpClient : IDisposable
     {
         #region Members
-        private ClientState stateClient;
-        private bool disposed;
+        private ClientState _state;
+        private bool _disposed;
         private HttpServer _server;
         private TcpClient _tcp;
         private static readonly Regex PrologRegex = new Regex("^([A-Z]+) ([^ ]+) (HTTP/[^ ]+)$", RegexOptions.Compiled);
@@ -20,20 +20,37 @@ namespace server
 
         public HttpClient(HttpServer serv)
         {
-            disposed = false;
+            _disposed = false;
             Server = serv;
+            _tcp = new TcpClient();
+            ClientState = new ClientState();
         }
 
         public void BeginRequest() { }
         
         void IDisposable.Dispose()
         {
-            disposed = true;
+            _disposed = true;
         }
 
         #region Properties
-        public HttpServer Server { get { return _server; } private set { _server = value; } }
-        public TcpClient TcpClient { get { return _tcp; } private set { _tcp = value; } }
+        public HttpServer Server
+        {
+            get { return _server; }
+            private set { _server = value;}
+        }
+
+        public TcpClient TcpClient
+        {
+            get { return _tcp; }
+            private set { _tcp = value; }
+        }
+
+        public ClientState ClientState
+        {
+            get { return _state; }
+            private set { _state = value; }
+        }
         #endregion
     }
 }
