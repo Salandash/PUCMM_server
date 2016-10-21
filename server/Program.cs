@@ -141,31 +141,32 @@ namespace server
             Program o = new Program();
             o._checkport(port);
             HttpServer Server = new HttpServer(port);
-            Server.StateChanged += (sender, evt) =>
-            {
-                Console.WriteLine(sender.GetType().Name);
-                Console.WriteLine("Changed");
-            };
 
-            Server._Start();
-            Server._Stop();
-
-            //while(true)
+            //Server.StateChanged += (sender, evt) =>
             //{
-            //    if (Console.ReadLine() == "uptime" || Console.ReadLine()=="UPTIME")
-            //    {
-            //        timeB = DateTime.Now;
-            //        o._runTime(timeA, timeB);
+            //    Console.WriteLine(sender.GetType().Name);
+            //    Console.WriteLine("Changed");
+            //};
 
-            //    }
-            //    if (Console.ReadLine() == "kill" || Console.ReadLine() == "KILL")
-            //    {
-            //        return 0;
-            //    }
+            //Server._Start();
+            //Server._Stop();
+
+            while(true)
+            {
+                if (Console.ReadLine() == "uptime" || Console.ReadLine()=="UPTIME")
+                {
+                    timeB = DateTime.Now;
+                    o._runTime(timeA, timeB);
+
+                }
+                if (Console.ReadLine() == "kill" || Console.ReadLine() == "KILL")
+                {
+                   return 0;
+                }
 
 
-            //}
-            Console.ReadKey();
+            }
+            //Console.ReadKey();
 
             return 0;
         }

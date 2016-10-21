@@ -15,7 +15,7 @@ namespace server
         public TcpListener _tcpListener;
         private object _synLock = new object();
         private Dictionary<HttpClient, bool> _clients = new Dictionary<HttpClient, bool>();
-        private AutoResetEvent clientsChangedEvent = new AutoResetEvent(false);
+        private AutoResetEvent _clientsChangedEvent = new AutoResetEvent(false);
         private int _readBufferSize;
         private int _writeBufferSize;
         private TimeSpan _readTime;
@@ -70,9 +70,58 @@ namespace server
             }
         }
 
-        private void BeginAcceptTcpClient() { }
-        private void AcceptTcpClientCallback(IAsyncResult ar) { }
-        private void RegisterClient(HttpServer serv) { }
+        private void BeginAcceptTcpClient()
+        {
+            TcpListener listen = _tcpListener;
+
+            if (listen == null)
+            {
+                Console.WriteLine("Local Listener null");
+            }
+
+            listen.BeginAcceptTcpClient(AcceptTcpClientCallback, listen);
+        }
+
+        private void AcceptTcpClientCallback(IAsyncResult ar)
+        {
+            var tcpListener = _tcpListener;
+
+            if (tcpListener == null)
+            {
+                Console.WriteLine("Local Listener null");
+                return;
+            }
+
+            var tcpClient = tcpListener.EndAcceptTcpClient(ar);
+
+            if (State.ToString().Equals("Stopped"))
+            {
+                tcpClient.Close();
+            }
+
+            var httpClient = new HttpClient(this);
+
+            RegisterClient(httpClient);
+
+            httpClient.BeginRequest();
+
+            BeginAcceptTcpClient();
+            
+        }
+
+
+        private void RegisterClient(HttpClient client)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException("Server attempted to register is null");
+            }
+            lock (_synLock)
+            {
+                _clients.Add(client, false);
+                _clientsChangedEvent.Set();
+            }
+        }
 
         void IDisposable.Dispose()
         {
