@@ -37,12 +37,15 @@ namespace server
             ServerBanner = String.Format("PUCMM_HTTP/{0}", GetType().Assembly.GetName().Version);
 
 
+
         }
 
         #region Methods
-        public void _Start()
+        public void Start()
         {
+            TimeOutManager = new HttpTimeoutManager(this);
             _tcpListener = new TcpListener(EndPoint);
+            ServerUtility = new HttpServerUtility();
             try
             {
                 _tcpListener.Start();
@@ -56,7 +59,7 @@ namespace server
             }
         }
 
-        public void _Stop()
+        public void Stop()
         {
             try
             {
@@ -125,7 +128,23 @@ namespace server
 
         void IDisposable.Dispose()
         {
-            _disposed = true;
+            if (!_disposed)
+            {
+                if (_state == HttpServerState.Started)
+                    Stop();
+                if (_clientsChangedEvent != null)
+                {
+                    ((IDisposable)_clientsChangedEvent).Dispose();
+                    _clientsChangedEvent = null;
+                }
+                _disposed = true;
+            }
+
+            if (TimeOutManager != null)
+            {
+                TimeOutManager.Dispose();
+                TimeOutManager = null;
+            }
         } 
 
         private void VerifyState(HttpServerState state)
@@ -148,6 +167,17 @@ namespace server
             }
         }
 
+        internal HttpServerUtility ServerUtility
+        {
+            get;
+            private set;
+        }
+
+        internal HttpTimeoutManager TimeOutManager
+        {
+            get;
+            private set;
+        }
         public event EventHandler StateChanged;
         protected virtual void OnStateChanged(EventArgs args)
         {
