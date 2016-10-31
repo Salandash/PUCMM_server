@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace server
+{ 
     internal class HttpReadBuffer
     {
         private readonly int _bufferSize;

@@ -20,8 +20,8 @@ namespace server
             if (server == null)
                 throw new ArgumentNullException(nameof(server));
 
-            ReadQueue = new TimeoutQueue(server.ReadTimeout);
-            WriteQueue = new TimeoutQueue(server.WriteTimeout);
+            ReadQueue = new TimeoutQueue(server.ReadTimeOut);
+            WriteQueue = new TimeoutQueue(server.WriteTimeOut);
 
             _thread = new Thread(ThreadProc);
             _thread.Start();

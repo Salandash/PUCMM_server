@@ -28,7 +28,7 @@ namespace server
         public HttpServer(int port)
         {
             EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            State = new HttpServerState();
+            State = HttpServerState.Stopped;
             ReadBufferSize = 4096;
             WriteBufferSize = 4096;
             ShutdownTimeOut = TimeSpan.FromSeconds(90);
@@ -43,14 +43,17 @@ namespace server
         #region Methods
         public void Start()
         {
+            VerifyState(HttpServerState.Stopped);
             TimeOutManager = new HttpTimeoutManager(this);
             _tcpListener = new TcpListener(EndPoint);
             ServerUtility = new HttpServerUtility();
+            State = HttpServerState.Starting;
             try
             {
                 _tcpListener.Start();
                 EndPoint = (IPEndPoint)_tcpListener.LocalEndpoint;
                 State = HttpServerState.Started;
+                BeginAcceptTcpClient();
             }
             catch
             {
@@ -72,7 +75,6 @@ namespace server
                 State = HttpServerState.Stopping;
             }
         }
-
         private void BeginAcceptTcpClient()
         {
             TcpListener listen = _tcpListener;
@@ -84,7 +86,6 @@ namespace server
 
             listen.BeginAcceptTcpClient(AcceptTcpClientCallback, listen);
         }
-
         private void AcceptTcpClientCallback(IAsyncResult ar)
         {
             var tcpListener = _tcpListener;
@@ -102,7 +103,7 @@ namespace server
                 tcpClient.Close();
             }
 
-            var httpClient = new HttpClient(this);
+            var httpClient = new HttpClient(this, tcpClient);
 
             RegisterClient(httpClient);
 
@@ -111,7 +112,6 @@ namespace server
             BeginAcceptTcpClient();
             
         }
-
 
         private void RegisterClient(HttpClient client)
         {

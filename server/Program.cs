@@ -148,10 +148,10 @@ namespace server
             //    Console.WriteLine("Changed");
             //};
 
-            //Server._Start();
-            //Server._Stop();
+            Server.Start();
 
-            while(true)
+            bool bs = true;
+            while(bs)
             {
                 if (Console.ReadLine() == "uptime" || Console.ReadLine()=="UPTIME")
                 {
@@ -161,14 +161,14 @@ namespace server
                 }
                 if (Console.ReadLine() == "kill" || Console.ReadLine() == "KILL")
                 {
-                   return 0;
+                    bs = false;
                 }
-
+                
 
             }
-            //Console.ReadKey();
-
+            Server.Stop();
             return 0;
+            //Console.ReadKey();
         }
     }
 }

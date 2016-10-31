@@ -30,6 +30,7 @@ namespace server
             // Resume processing the request.
 
             Client.ExecuteRequest();
+            
         }
 
         public void Dispose()
