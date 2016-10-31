@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
 
 namespace server
 {
@@ -13,7 +14,7 @@ namespace server
         #region Members
         private HttpServerState _state;
         public TcpListener _tcpListener;
-        private object _synLock = new object();
+        private object _syncLock = new object();
         private Dictionary<HttpClient, bool> _clients = new Dictionary<HttpClient, bool>();
         private AutoResetEvent _clientsChangedEvent = new AutoResetEvent(false);
         private int _readBufferSize;
@@ -59,11 +60,14 @@ namespace server
             {
                 Console.WriteLine("Server could not start.");
                 State = HttpServerState.Stopped;
+                throw new PHttpException("Faileds to start HTTP server.");
             }
         }
 
         public void Stop()
         {
+            VerifyState(HttpServerState.Started);
+            State = HttpServerState.Stopping;
             try
             {
                 _tcpListener.Stop();
@@ -73,6 +77,12 @@ namespace server
             {
                 Console.WriteLine("Server could not stop.");
                 State = HttpServerState.Stopping;
+            }
+            finally
+            {
+                StopClients();
+                _tcpListener = null;
+                State = HttpServerState.Stopped;
             }
         }
         private void BeginAcceptTcpClient()
@@ -112,20 +122,108 @@ namespace server
             BeginAcceptTcpClient();
             
         }
-
         private void RegisterClient(HttpClient client)
         {
             if (client == null)
             {
                 throw new ArgumentNullException("Server attempted to register is null");
             }
-            lock (_synLock)
+            lock (_syncLock)
             {
                 _clients.Add(client, false);
                 _clientsChangedEvent.Set();
             }
         }
+        internal void RaiseRequest(HttpContext context)
+        {
+            if (context == null)
+                throw new ArgumentNullException("context");
+            OnRequestReceived(new HttpRequestEventArgs(context));
+        }
+        internal bool RaiseUnhandledException(HttpContext context, Exception exception)
+        {
+            if (context == null)
+                throw new ArgumentNullException("context");
+            var e = new HttpExceptionEventArgs(context, exception);
+            OnUnhandledException(e);
+            return e.Handled;
+        }
+        private void StopClients()
+        {
+            var shutdownStarted = DateTime.Now;
+            bool forceShutdown = false;
+            // Clients that are waiting for new requests are closed.
 
+            List<HttpClient> clients;
+            lock (_syncLock)
+            {
+                clients = new List<HttpClient>(_clients.Keys);
+            }
+
+            foreach (var client in clients)
+            {
+                client.RequestClose();
+            }
+
+            // First give all clients a chance to complete their running requests.
+            while (true)
+            {
+                lock (_syncLock)
+                {
+                    if (_clients.Count == 0)
+                        break;
+                }
+
+                var shutdownRunning = DateTime.Now - shutdownStarted;
+
+                if (shutdownRunning >= ShutdownTimeOut)
+                {
+                    forceShutdown = true;
+                    break;
+                }
+                _clientsChangedEvent.WaitOne(ShutdownTimeOut - shutdownRunning);
+            }
+
+            if (!forceShutdown)
+                return;
+
+            // If there are still clients running after the timeout, their
+            // connections will be forcibly closed.
+            lock (_syncLock)
+            {
+                clients = new List<HttpClient>(_clients.Keys);
+            }
+
+            foreach (var client in clients)
+            {
+                client.ForceClose();
+            }
+
+            // Wait for the registered clients to be cleared.
+            while (true)
+            {
+                lock (_syncLock)
+                {
+                    if (_clients.Count == 0)
+                        break;
+                }
+                _clientsChangedEvent.WaitOne();
+            }
+        }
+        internal void UnregisterClient(HttpClient client)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException("Client argument in HttpServer.UnregisterClient() method is null");
+            }
+
+            lock (_syncLock)
+            {
+                Debug.Assert(_clients.ContainsKey(client));
+                _clients.Remove(client);
+                _clientsChangedEvent.Set();
+            }
+        }
         void IDisposable.Dispose()
         {
             if (!_disposed)
@@ -178,6 +276,26 @@ namespace server
             get;
             private set;
         }
+        public event EventHandler UnhandledException;
+        protected virtual void OnUnhandledException(HttpExceptionEventArgs args)
+        {
+            var ev = UnhandledException;
+            if (ev != null)
+            {
+                ev(this, args);
+            }
+        }
+
+        public event EventHandler RequestReceived;
+        protected virtual void OnRequestReceived(EventArgs args)
+        {
+            var ev = RequestReceived;
+            if (ev != null)
+            {
+                ev(this, args);
+            }
+        }
+
         public event EventHandler StateChanged;
         protected virtual void OnStateChanged(EventArgs args)
         {
