@@ -15,7 +15,7 @@ namespace server
         public TcpListener _tcpListener;
         private object _synLock = new object();
         private Dictionary<HttpClient, bool> _clients = new Dictionary<HttpClient, bool>();
-        private AutoResetEvent clientsChangedEvent = new AutoResetEvent(false);
+        private AutoResetEvent _clientsChangedEvent = new AutoResetEvent(false);
         private int _readBufferSize;
         private int _writeBufferSize;
         private TimeSpan _readTime;
@@ -28,7 +28,7 @@ namespace server
         public HttpServer(int port)
         {
             EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-            State = new HttpServerState();
+            State = HttpServerState.Stopped;
             ReadBufferSize = 4096;
             WriteBufferSize = 4096;
             ShutdownTimeOut = TimeSpan.FromSeconds(90);
@@ -37,17 +37,23 @@ namespace server
             ServerBanner = String.Format("PUCMM_HTTP/{0}", GetType().Assembly.GetName().Version);
 
 
+
         }
 
         #region Methods
-        public void _Start()
+        public void Start()
         {
+            VerifyState(HttpServerState.Stopped);
+            TimeOutManager = new HttpTimeoutManager(this);
             _tcpListener = new TcpListener(EndPoint);
+            ServerUtility = new HttpServerUtility();
+            State = HttpServerState.Starting;
             try
             {
                 _tcpListener.Start();
                 EndPoint = (IPEndPoint)_tcpListener.LocalEndpoint;
                 State = HttpServerState.Started;
+                BeginAcceptTcpClient();
             }
             catch
             {
@@ -56,7 +62,7 @@ namespace server
             }
         }
 
-        public void _Stop()
+        public void Stop()
         {
             try
             {
@@ -69,14 +75,76 @@ namespace server
                 State = HttpServerState.Stopping;
             }
         }
+        private void BeginAcceptTcpClient()
+        {
+            TcpListener listen = _tcpListener;
 
-        private void BeginAcceptTcpClient() { }
-        private void AcceptTcpClientCallback(IAsyncResult ar) { }
-        private void RegisterClient(HttpServer serv) { }
+            if (listen == null)
+            {
+                Console.WriteLine("Local Listener null");
+            }
+
+            listen.BeginAcceptTcpClient(AcceptTcpClientCallback, listen);
+        }
+        private void AcceptTcpClientCallback(IAsyncResult ar)
+        {
+            var tcpListener = _tcpListener;
+
+            if (tcpListener == null)
+            {
+                Console.WriteLine("Local Listener null");
+                return;
+            }
+
+            var tcpClient = tcpListener.EndAcceptTcpClient(ar);
+
+            if (State.ToString().Equals("Stopped"))
+            {
+                tcpClient.Close();
+            }
+
+            var httpClient = new HttpClient(this, tcpClient);
+
+            RegisterClient(httpClient);
+
+            httpClient.BeginRequest();
+
+            BeginAcceptTcpClient();
+            
+        }
+
+        private void RegisterClient(HttpClient client)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException("Server attempted to register is null");
+            }
+            lock (_synLock)
+            {
+                _clients.Add(client, false);
+                _clientsChangedEvent.Set();
+            }
+        }
 
         void IDisposable.Dispose()
         {
-            _disposed = true;
+            if (!_disposed)
+            {
+                if (_state == HttpServerState.Started)
+                    Stop();
+                if (_clientsChangedEvent != null)
+                {
+                    ((IDisposable)_clientsChangedEvent).Dispose();
+                    _clientsChangedEvent = null;
+                }
+                _disposed = true;
+            }
+
+            if (TimeOutManager != null)
+            {
+                TimeOutManager.Dispose();
+                TimeOutManager = null;
+            }
         } 
 
         private void VerifyState(HttpServerState state)
@@ -99,6 +167,17 @@ namespace server
             }
         }
 
+        internal HttpServerUtility ServerUtility
+        {
+            get;
+            private set;
+        }
+
+        internal HttpTimeoutManager TimeOutManager
+        {
+            get;
+            private set;
+        }
         public event EventHandler StateChanged;
         protected virtual void OnStateChanged(EventArgs args)
         {
