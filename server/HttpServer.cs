@@ -260,8 +260,10 @@ namespace server
             get { return _state; }
             set
             {
+                var aux = _state;
                 _state = value;
-                OnStateChanged(EventArgs.Empty);
+                StateChangedEventsArgs stateChangedEvent = new StateChangedEventsArgs(aux, _state);
+                OnStateChanged(stateChangedEvent);
             }
         }
 
@@ -286,8 +288,8 @@ namespace server
             }
         }
 
-        public event EventHandler RequestReceived;
-        protected virtual void OnRequestReceived(EventArgs args)
+        public event HttpRequestEventHandler RequestReceived;
+        protected virtual void OnRequestReceived(HttpRequestEventArgs args)
         {
             var ev = RequestReceived;
             if (ev != null)
@@ -297,7 +299,7 @@ namespace server
         }
 
         public event EventHandler StateChanged;
-        protected virtual void OnStateChanged(EventArgs args)
+        protected virtual void OnStateChanged(StateChangedEventsArgs args)
         {
             var ev = StateChanged;
             if (ev != null)

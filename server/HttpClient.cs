@@ -234,7 +234,7 @@ namespace server
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Error! {ex.Message}");
+                Console.WriteLine($"Error! {ex.Message}");
                 Dispose();
             }
         }
@@ -516,6 +516,8 @@ namespace server
 
             ExecuteRequest();
         }
+
+        
         private bool ProcessContentLengthHeader()
         {
             // Read the content.
