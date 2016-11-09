@@ -409,7 +409,7 @@ namespace server
                 }
                 else
                 {
-                    string[] parts = line.Split(':');
+                    string[] parts = line.Split(new[] { ':' }, 2);
                     if (parts.Length != 2)
                     {
                         throw new ProtocolException("Received header without colon");

@@ -745,7 +745,7 @@ namespace server
                 if (args[0] == "--path")
                 {
                     path = args[1];
-                    port = 80;
+                    port = 8082;
 
                     if (!Directory.Exists(path))
                     {
@@ -823,13 +823,15 @@ namespace server
             else
             {
                 path = System.Reflection.Assembly.GetEntryAssembly().Location;
-                port = 80;
+                port = 8082;
             }
             Console.WriteLine("PATH: " + path);
             Console.WriteLine("PORT: " + port);
             Program o = new Program();
             o._checkport(port);
             HttpServer Server = new HttpServer(port);
+
+            Server.Start();
 
             Server.StateChanged += (sender, evt) =>
             {
@@ -843,9 +845,9 @@ namespace server
 
             Server.RequestReceived += (s, e) =>
             {
-                #region File Based serve
+                #region File Based server
                 //TODO: RR: Add this as a server config option
-                string filePath = @"C:\Users\William\Documents\Visual Studio 2015\Projects\server\server\Resources\";
+                string filePath = @"C:\Users\William\Documents\Visual Studio 2015\Projects\server\server\CRUD\";
                 string noSlash = e.Request.Path;
                 filePath = filePath + noSlash.TrimStart('/');
                 if (File.Exists(filePath))
@@ -885,7 +887,7 @@ namespace server
                 #endregion
             };
 
-            Server.EndPoint = new IPEndPoint(IPAddress.Loopback, 8080);
+            Server.EndPoint = new IPEndPoint(IPAddress.Loopback, 8082);
                 //bool bs = true;
                 //while(bs)
                 //{
@@ -902,7 +904,9 @@ namespace server
 
 
                 //}
+                if( Console.ReadKey().ToString() == ConsoleKey.Q.ToString())
                 Server.Stop();
+
                 return 0;
 
             }

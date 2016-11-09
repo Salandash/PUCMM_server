@@ -52,12 +52,13 @@ namespace server
             try
             {
                 _tcpListener.Start();
-                EndPoint = (IPEndPoint)_tcpListener.LocalEndpoint;
+                //EndPoint = (IPEndPoint)_tcpListener.LocalEndpoint;
                 State = HttpServerState.Started;
                 BeginAcceptTcpClient();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 Console.WriteLine("Server could not start.");
                 State = HttpServerState.Stopped;
                 throw new PHttpException("Faileds to start HTTP server.");
