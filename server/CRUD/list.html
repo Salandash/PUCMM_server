@@ -1,18 +1,10 @@
-﻿<!DOCTYPE html>
+﻿<h1>List</h1>
+<ul>
+    {{#each Model.PList}}
+    <li>
+        <span>Name: {{this._name}}</span> <span>LastName: {{this._lastName}}</span>
 
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="utf-8" />
-    <title>{{title}}</title>
-</head>
-<body>
-    <ul>
-        <li>
-            <img />
-            <span></span>
-            <button type="button" class="btn btn-success">Add</button>
-            <button type="button" class="btn btn-danger">Delete</button>
-        </li>
-    </ul>
-</body>
-</html>
+        {{else}}
+        This list is empty.
+        {{/each}}
+</ul>

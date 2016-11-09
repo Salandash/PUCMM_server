@@ -104,7 +104,7 @@ namespace server
                 // If table doesn't exist then create it
                 if (string.IsNullOrEmpty(result))
                 {
-                    string createTableQuery = "CREATE TABLE highscores (name VARCHAR(20), score INT)";
+                    string createTableQuery = "CREATE TABLE people (Id INT, Name VARCHAR(20), LastName VARCHAR(20))";
                     using (SQLiteCommand createTableCommand = new SQLiteCommand(createTableQuery, dbConn))
                     {
                         createTableCommand.ExecuteNonQuery();
@@ -703,8 +703,8 @@ namespace server
 
         static string View(string viewName, object model, dynamic viewData = null)
         {
-            var layout = File.ReadAllText("layout.cshtml");
-            var partial = File.ReadAllText($"{viewName}.cshtml");
+            var layout = File.ReadAllText("_layout.html");
+            var partial = File.ReadAllText($"{viewName}.html");
 
             var partialTemplate = HandlebarsDotNet.Handlebars.Compile(new StringReader(partial));
             HandlebarsDotNet.Handlebars.RegisterTemplate("body", partialTemplate);
@@ -720,15 +720,15 @@ namespace server
 
         static void InsertPeople(SQLiteConnection dbConn)
         {
-            string sql = "insert into people (Id, Name, LastName, ProfilePic) values (1, 'William', 'Herman', 'mypic')";
+            string sql = "insert into people (Id, Name, LastName) values (1, 'William', 'Herman')";
             SQLiteCommand command = new SQLiteCommand(sql, dbConn);
             command.ExecuteNonQuery();
 
-            sql = "insert into people (Id, Name, LastName, ProfilePic) values (2, 'George', 'García', 'mypic')";
+            sql = "insert into people (Id, Name, LastName) values (2, 'George', 'García')";
             command = new SQLiteCommand(sql, dbConn);
             command.ExecuteNonQuery();
 
-            sql = "insert into people (Id, Name, LastName, ProfilePic) values (3, 'Pedro', 'Amparo', 'mypic')";
+            sql = "insert into people (Id, Name, LastName) values (3, 'Pedro', 'Amparo')";
             command = new SQLiteCommand(sql, dbConn);
             command.ExecuteNonQuery();
         }
@@ -842,6 +842,30 @@ namespace server
                     Console.WriteLine($"{Server.ServerBanner} started.");
                 Console.WriteLine(Environment.NewLine);
             };
+
+            #region Data load
+            string dbFile = "test.sqlite";
+            dbFile = Directory.GetCurrentDirectory() + @"\" + dbFile;
+
+            if (!File.Exists(dbFile))
+            {
+                Console.WriteLine("Database does not exist. Creating new database...");
+                SQLiteConnection.CreateFile(dbFile);
+            }
+
+            string dbConnectionString = $"Data Source={dbFile};Version=3;";
+
+            using (SQLiteConnection connSQL = new SQLiteConnection(dbConnectionString))
+            {
+                connSQL.Open();
+                CreatePeopleTable(connSQL);
+                InsertPeople(connSQL);
+            }
+
+            People person = new People();
+            List<People> PList = person.GetPeople();
+            
+            #endregion
 
             Server.RequestReceived += (s, e) =>
             {
