@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
 
 namespace server
 {
@@ -13,7 +14,7 @@ namespace server
         #region Members
         private HttpServerState _state;
         public TcpListener _tcpListener;
-        private object _synLock = new object();
+        private object _syncLock = new object();
         private Dictionary<HttpClient, bool> _clients = new Dictionary<HttpClient, bool>();
         private AutoResetEvent _clientsChangedEvent = new AutoResetEvent(false);
         private int _readBufferSize;
@@ -86,6 +87,38 @@ namespace server
 
             listen.BeginAcceptTcpClient(AcceptTcpClientCallback, listen);
         }
+
+        internal void RaiseRequest(HttpContext context)
+        {
+            if (context == null)
+                throw new ArgumentNullException("context");
+            OnRequestReceived(new HttpRequestEventArgs(context));
+        }
+
+        internal bool RaiseUnhandledException(HttpContext context, Exception exception)
+        {
+            if (context == null)
+                throw new ArgumentNullException("context");
+            var e = new HttpExceptionEventArgs(context, exception);
+            OnUnhandledException(e);
+            return e.Handled;
+        }
+
+        internal void UnregisterClient(HttpClient client)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException("Client argument in HttpServer.UnregisterClient() method is null");
+            }
+
+            lock (_syncLock)
+            {
+                Debug.Assert(_clients.ContainsKey(client));
+                _clients.Remove(client);
+                _clientsChangedEvent.Set();
+            }
+        }
+
         private void AcceptTcpClientCallback(IAsyncResult ar)
         {
             var tcpListener = _tcpListener;
@@ -119,7 +152,7 @@ namespace server
             {
                 throw new ArgumentNullException("Server attempted to register is null");
             }
-            lock (_synLock)
+            lock (_syncLock)
             {
                 _clients.Add(client, false);
                 _clientsChangedEvent.Set();
@@ -178,15 +211,6 @@ namespace server
             get;
             private set;
         }
-        public event EventHandler StateChanged;
-        protected virtual void OnStateChanged(EventArgs args)
-        {
-            var ev = StateChanged;
-            if (ev != null)
-            {
-                ev(this, args);
-            }
-        }
 
         public int ReadBufferSize
         {
@@ -227,5 +251,37 @@ namespace server
         public IPEndPoint EndPoint { get; set; }
         #endregion
 
+        #region Events
+        public event HttpExceptionEventHandler UnhandledException;
+        protected virtual void OnUnhandledException(HttpExceptionEventArgs args)
+        {
+            var ev = UnhandledException;
+            if (ev != null)
+            {
+                ev(this, args);
+            }
+        }
+
+        public event EventHandler StateChanged;
+        protected virtual void OnStateChanged(EventArgs args)
+        {
+            var ev = StateChanged;
+            if (ev != null)
+            {
+                ev(this, args);
+            }
+        }
+
+        public event HttpRequestEventHandler RequestReceived;
+        protected virtual void OnRequestReceived(HttpRequestEventArgs args)
+        {
+            var ev = RequestReceived;
+            if (ev != null)
+            {
+                ev(this, args);
+            }
+        }
+
+        #endregion
     }
 }
